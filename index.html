@@ -1004,7 +1004,7 @@ function renderStats(statsArray, containerId) {
   el.innerHTML = html;
 }
 
-// ─── Your Pokemon ───────────────────────────────────────────────
+// ─── Your Pokemon ─────────────────────────────────────────────────────────────
 async function loadYourPokemon(name) {
   const status = document.getElementById('yours-status');
   status.innerHTML = '<span class="loader"></span> Loading...';
@@ -1014,7 +1014,7 @@ async function loadYourPokemon(name) {
     const types = poke.types.map(t => t.type.name);
 
     const img = (poke.sprites && poke.sprites.other && poke.sprites.other['official-artwork'] && poke.sprites.other['official-artwork'].front_default) || (poke.sprites && poke.sprites.front_default);
-    const imgWrap = document.querySe('#panel-yours .poke-img-wrap');
+    const imgWrap = document.querySelector('#panel-yours .poke-img-wrap');
     imgWrap.innerHTML = img ? `<img src="${img}" alt="${name}">` : '<span class="placeholder">?</span>';
 
     document.getElementById('yours-name').textContent = capitalize(name);
@@ -1037,16 +1037,17 @@ async function loadYourPokemon(name) {
   }
 }
 
-// ─── Enemy Pokemon ────────────────â───────────────────────────────────
+// ─── Enemy Pokemon ────────────────────────────────────────────────────────────
 let enemyData = null;
 
 async function loadEnemyPokemon(name) {
-  const status = document.getElementById('enemy-status');
-  status.innerHTML = '<span class="loader"></span> Loading...';
+  const status = document.getElementById('enemstatus.innerHTML = '<span class="loader"></span> Loading...';
   document.getElementById('enemy-moves').innerHTML = '<span style="color:var(--muted);font-size:0.85rem">&#8212;</span>';
   document.getElementById('enemy-alerts').innerHTML = '';
   enemyData = null;
-  lastEnemyMoves =try {
+  lastEnemyMoves = [];
+
+  try {
     const poke = await fetchPokemon(name);
     enemyData = poke;
     const types = poke.types.map(t => t.type.name);
@@ -1112,7 +1113,7 @@ async function findEnemyMoves(level) {
           );
         const flavor = flavorEntry ? flavorEntry.flavor_text.replace(/\f|\n/g, ' ').trim() : '';
         return { ...m, type: data.type.name, power: data.power, damageClass: (data.damage_class && data.damage_class.name), flavor };
-      } catch {
+      } catch(e) {
         return { ...m, type: 'unknown', power: null };
       }
     }));
@@ -1173,12 +1174,12 @@ function checkEnemyWarnings() {
   if (lastEnemyMoves.length > 0) renderEnemyMoves(lastEnemyMoves);
 }
 
-// ─── Utilit──────────────────────────────────────────────────────────────
-function capitalize(s) {
-  return s.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+// ─── Utilities ────────────────────────────────────────────────────────────────
+function capitalize(s) {urn s.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
-// ─── Init ─────────────────────────────────────────────────────────────────âsync () => {
+// ─── Init ─────────────────────────────────────────────────────────────────────
+(async () => {
   try {
     await loadPokemonList();
     buildPartySlots();
