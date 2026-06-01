@@ -757,10 +757,10 @@ async function fetchJSON(url) {
 
 let allPokemon = [];
 async function loadPokemonList() {
-  const d = await fetchJSON(`${API}/pokemon?limit=721`);
+  const d = await fetchJSON('' + (API) + '/pokemon?limit=721');
   allPokemon = d.results;
 }
-async function fetchPokemon(name) { return fetchJSON(`${API}/pokemon/${name}`); }
+async function fetchPokemon(name) { return fetchJSON('' + (API) + '/pokemon/' + (name) + ''); }
 
 // ─── Search dropdown factory ──────────────────────────────────────────────────
 function setupSearch(inputEl, dropdownEl, onSelect) {
@@ -823,30 +823,28 @@ function buildPartySlots() {
   for (let i = 0; i < 6; i++) {
     const slot = document.createElement('div');
     slot.className = 'party-slot';
-    slot.id = `party-slot-${i}`;
-    slot.innerHTML = `
-      <div class="party-slot-inner">
-        <div class="party-slot-num">${i+1}</div>
-        <div class="party-mini-img" id="party-img-${i}"><span class="mini-placeholder">?</span></div>
-        <div class="party-slot-info">
-          <div class="party-slot-name" id="party-name-${i}" style="color:var(--muted)">Empty</div>
-          <div class="party-slot-types" id="party-types-${i}"></div>
-          <div class="party-search-wrap">
-            <div class="search-wrap" style="margin-bottom:0">
-              <span class="icon" style="font-size:0.8rem">&#128269;</span>
-              <input type="text" id="party-input-${i}" placeholder="Search..." autocomplete="off"
-                style="padding:0.45rem 0.75rem 0.45rem 2rem;font-size:0.8rem;border-radius:8px;" />
-              <div class="dropdown" id="party-dropdown-${i}"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="party-warn-badge" id="party-warn-${i}">(!) DANGER</div>
-    `;
+    slot.id = 'party-slot-' + (i) + '';
+    slot.innerHTML =
+      '<div class="party-slot-inner">' +
+        '<div class="party-slot-num">' + (i+1) + '</div>' +
+        '<div class="party-mini-img" id="party-img-' + i + '"><span class="mini-placeholder">?</span></div>' +
+        '<div class="party-slot-info">' +
+          '<div class="party-slot-name" id="party-name-' + i + '" style="color:var(--muted)">Empty</div>' +
+          '<div class="party-slot-types" id="party-types-' + i + '"></div>' +
+          '<div class="party-search-wrap">' +
+            '<div class="search-wrap" style="margin-bottom:0">' +
+              '<span class="icon" style="font-size:0.8rem">&#128269;</span>' +
+              '<input type="text" id="party-input-' + i + '" placeholder="Search..." autocomplete="off" style="padding:0.45rem 0.75rem 0.45rem 2rem;font-size:0.8rem;border-radius:8px;" />' +
+              '<div class="dropdown" id="party-dropdown-' + i + '"></div>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="party-warn-badge" id="party-warn-' + i + '">(!) DANGER</div>';
     container.appendChild(slot);
 
-    const inputEl = document.getElementById(`party-input-${i}`);
-    const dropdownEl = document.getElementById(`party-dropdown-${i}`);
+    const inputEl = document.getElementById('party-input-' + (i) + '');
+    const dropdownEl = document.getElementById('party-dropdown-' + (i) + '');
     setupSearch(inputEl, dropdownEl, (name) => loadPartyMember(i, name));
 
     // Click the slot (not the search input) to populate "Your Pokemon"
@@ -861,9 +859,9 @@ function buildPartySlots() {
 }
 
 async function loadPartyMember(idx, name) {
-  const nameEl   = document.getElementById(`party-name-${idx}`);
-  const imgEl    = document.getElementById(`party-img-${idx}`);
-  const typesEl  = document.getElementById(`party-types-${idx}`);
+  const nameEl   = document.getElementById('party-name-' + (idx) + '');
+  const imgEl    = document.getElementById('party-img-' + (idx) + '');
+  const typesEl  = document.getElementById('party-types-' + (idx) + '');
 
   nameEl.textContent = '...';
   nameEl.style.color = 'var(--muted)';
@@ -876,13 +874,13 @@ async function loadPartyMember(idx, name) {
 
     const img = (poke.sprites && poke.sprites.other && poke.sprites.other['official-artwork'] && poke.sprites.other['official-artwork'].front_default) || (poke.sprites && poke.sprites.front_default);
     imgEl.innerHTML = img
-      ? `<img src="${img}" alt="${name}">`
+      ? '<img src="' + (img) + '" alt="' + (name) + '">'
       : '<span class="mini-placeholder">?</span>';
 
     nameEl.textContent = capitalize(name);
     nameEl.style.color = 'var(--text)';
     typesEl.innerHTML = types.map(t =>
-      `<span class="type-badge" style="background:${TYPE_COLORS[t]||'#555'};padding:0.15rem 0.45rem;font-size:0.65rem">${t}</span>`
+      '<span class="type-badge" style="background:' + (TYPE_COLORS[t]||'#555') + ';padding:0.15rem 0.45rem;font-size:0.65rem">' + (t) + '</span>'
     ).join('');
 
     // Re-evaluate warnings with current enemy moves
@@ -902,8 +900,8 @@ function updatePartyWarnings() {
   );
 
   for (let i = 0; i < 6; i++) {
-    const slot = document.getElementById(`party-slot-${i}`);
-    const warnEl = document.getElementById(`party-warn-${i}`);
+    const slot = document.getElementById('party-slot-' + (i) + '');
+    const warnEl = document.getElementById('party-warn-' + (i) + '');
     const pd = partyData[i];
     slot.classList.remove('slot-danger', 'slot-warn', 'slot-safe');
 
@@ -945,20 +943,20 @@ function renderTypeBreakdown(weakMap, weakElId, resistElId, immuneElId) {
   let wHtml = '';
   [...weak4,...weak2].forEach(({type,mult}) => {
     const label = mult >= 4 ? 'x4' : 'x2';
-    wHtml += `<div class="weakness-chip" style="background:${TYPE_COLORS[type]||'#555'}">${type} <span class="multiplier">${label}</span></div>`;
+    wHtml += '<div class="weakness-chip" style="background:' + (TYPE_COLORS[type]||'#555') + '">' + (type) + ' <span class="multiplier">' + (label) + '</span></div>';
   });
   weakEl.innerHTML = wHtml || '<span style="color:var(--muted);font-size:0.82rem">None</span>';
 
   let rHtml = '';
   resist.sort((a,b)=>a.mult-b.mult).forEach(({type,mult}) => {
     const label = mult <= 0.25 ? 'x0.25' : 'x0.5';
-    rHtml += `<div class="resist-chip" style="background:${TYPE_COLORS[type]||'#555'}">${type} <span class="multiplier">${label}</span></div>`;
+    rHtml += '<div class="resist-chip" style="background:' + (TYPE_COLORS[type]||'#555') + '">' + (type) + ' <span class="multiplier">' + (label) + '</span></div>';
   });
   resistEl.innerHTML = rHtml || '<span style="color:var(--muted);font-size:0.82rem">None</span>';
 
   let iHtml = '';
   immune.forEach(({type}) => {
-    iHtml += `<div class="immune-chip" style="border-color:${TYPE_COLORS[type]||'#555'}">${type} <span class="multiplier">x0</span></div>`;
+    iHtml += '<div class="immune-chip" style="border-color:' + (TYPE_COLORS[type]||'#555') + '">' + (type) + ' <span class="multiplier">x0</span></div>';
   });
   immuneEl.innerHTML = iHtml || '<span style="color:var(--muted);font-size:0.82rem">None</span>';
 }
@@ -984,23 +982,21 @@ function renderStats(statsArray, containerId) {
 
   let html = '';
   for (const { key, label, color } of STAT_META) {
-    const val = map[key] ?? 0;
+    const val = (map[key] !== undefined && map[key] !== null) ? map[key] : 0;
     const pct = Math.round((val / STAT_MAX) * 100);
-    html += `
-      <div class="stat-row">
-        <div class="stat-label">${label}</div>
-        <div class="stat-value">${val}</div>
-        <div class="stat-bar-track">
-          <div class="stat-bar-fill" style="width:${pct}%;background:${color}"></div>
-        </div>
-      </div>`;
+    html += '<div class="stat-row">' +
+      '<div class="stat-label">' + label + '</div>' +
+      '<div class="stat-value">' + val + '</div>' +
+      '<div class="stat-bar-track">' +
+        '<div class="stat-bar-fill" style="width:' + pct + '%;background:' + color + '"></div>' +
+      '</div>' +
+    '</div>';
   }
-  html += `
-    <div class="stat-total-row">
-      <div class="stat-total-label">Total</div>
-      <div class="stat-total-value">${total}</div>
-      <div></div>
-    </div>`;
+  html += '<div class="stat-total-row">' +
+    '<div class="stat-total-label">Total</div>' +
+    '<div class="stat-total-value">' + total + '</div>' +
+    '<div></div>' +
+  '</div>';
   el.innerHTML = html;
 }
 
@@ -1015,12 +1011,12 @@ async function loadYourPokemon(name) {
 
     const img = (poke.sprites && poke.sprites.other && poke.sprites.other['official-artwork'] && poke.sprites.other['official-artwork'].front_default) || (poke.sprites && poke.sprites.front_default);
     const imgWrap = document.querySelector('#panel-yours .poke-img-wrap');
-    imgWrap.innerHTML = img ? `<img src="${img}" alt="${name}">` : '<span class="placeholder">?</span>';
+    imgWrap.innerHTML = img ? '<img src="' + (img) + '" alt="' + (name) + '">' : '<span class="placeholder">?</span>';
 
     document.getElementById('yours-name').textContent = capitalize(name);
     document.getElementById('yours-name').style.cssText = 'font-family:Rajdhani,sans-serif;font-size:1.4rem;font-weight:700;';
     document.getElementById('yours-types').innerHTML = types.map(t =>
-      `<span class="type-badge" style="background:${TYPE_COLORS[t]||'#555'}">${t}</span>`
+      '<span class="type-badge" style="background:' + (TYPE_COLORS[t]||'#555') + '">' + (t) + '</span>'
     ).join('');
 
     const weakMap = calcWeaknesses(types);
@@ -1041,7 +1037,8 @@ async function loadYourPokemon(name) {
 let enemyData = null;
 
 async function loadEnemyPokemon(name) {
-  const status = document.getElementById('enemstatus.innerHTML = '<span class="loader"></span> Loading...';
+  const status = document.getElementById('enemy-status');
+  status.innerHTML = '<span class="loader"></span> Loading...';
   document.getElementById('enemy-moves').innerHTML = '<span style="color:var(--muted);font-size:0.85rem">&#8212;</span>';
   document.getElementById('enemy-alerts').innerHTML = '';
   enemyData = null;
@@ -1054,12 +1051,12 @@ async function loadEnemyPokemon(name) {
 
     const img = (poke.sprites && poke.sprites.other && poke.sprites.other['official-artwork'] && poke.sprites.other['official-artwork'].front_default) || (poke.sprites && poke.sprites.front_default);
     const imgWrap = document.querySelector('#panel-enemy .poke-img-wrap');
-    imgWrap.innerHTML = img ? `<img src="${img}" alt="${name}">` : '<span class="placeholder">?</span>';
+    imgWrap.innerHTML = img ? '<img src="' + (img) + '" alt="' + (name) + '">' : '<span class="placeholder">?</span>';
 
     document.getElementById('enemy-name').textContent = capitalize(name);
     document.getElementById('enemy-name').style.cssText = 'font-family:Rajdhani,sans-serif;font-size:1.4rem;font-weight:700;';
     document.getElementById('enemy-types').innerHTML = types.map(t =>
-      `<span class="type-badge" style="background:${TYPE_COLORS[t]||'#555'}">${t}</span>`
+      '<span class="type-badge" style="background:' + (TYPE_COLORS[t]||'#555') + '">' + (t) + '</span>'
     ).join('');
 
     renderTypeBreakdown(calcWeaknesses(types), 'enemy-weaknesses', 'enemy-resistances', 'enemy-immunities');
@@ -1107,7 +1104,7 @@ async function findEnemyMoves(level) {
 
     const movesWithTypes = await Promise.all(levelUpMoves.map(async m => {
       try {
-        const data = await fetchJSON(`${API}/move/${m.name}`);
+        const data = await fetchJSON('' + (API) + '/move/' + (m.name) + '');
         const flavorEntry = (data.flavor_text_entries || []).find(e =>
             e.language.name === 'en' && (e.version_group && e.version_group.name === 'x-y' || true)
           );
@@ -1121,7 +1118,7 @@ async function findEnemyMoves(level) {
     lastEnemyMoves = movesWithTypes;
     renderEnemyMoves(movesWithTypes);
     updatePartyWarnings();
-    status.textContent = `Last ${movesWithTypes.length} move(s) learned at or before level ${level}`;
+    status.textContent = 'Last ' + (movesWithTypes.length) + ' move(s) learned at or before level ' + (level) + '';
 
   } catch(e) {
     status.textContent = '(!) Could not load moves.';
@@ -1144,7 +1141,7 @@ function renderEnemyMoves(moves) {
     div.className = 'move-item' + (isWeakness && mult >= 4 ? ' danger-move' : isWeakness ? ' warning-move' : '');
 
     const typeColor = TYPE_COLORS[m.type] || '#555';
-    const powerTxt  = m.power ? `${m.power} PWR` : (m.damageClass === 'status' ? 'Status' : '&#8212;');
+    const powerTxt  = m.power ? '' + (m.power) + ' PWR' : (m.damageClass === 'status' ? 'Status' : '&#8212;');
 
     const tooltipHtml = m.flavor ? '<div class="move-tooltip">' + m.flavor + '</div>' : '';
     const warnHtml = isWeakness ? '<span class="warn-icon">' + (mult >= 4 ? '&#128308;' : '&#9888;') + '</span>' : '';
@@ -1162,11 +1159,11 @@ function renderEnemyMoves(moves) {
 
   if (warningMoves.length > 0 && Object.keys(yourWeaknesses).length > 0) {
     const lines = warningMoves.map(m =>
-      `<strong style="text-transform:capitalize">${m.name.replace(/-/g,' ')}</strong> (${m.type}, x${m.mult} damage)`
+      '<strong style="text-transform:capitalize">' + (m.name.replace(/-/g,' ')) + '</strong> (' + (m.type) + ', x' + (m.mult) + ' damage)'
     ).join(', ');
-    alertsEl.innerHTML = `<div class="alert">(!!) <span>Danger! This enemy knows move(s) your Pokemon is weak to: ${lines}</span></div>`;
+    alertsEl.innerHTML = '<div class="alert">(!!) <span>Danger! This enemy knows move(s) your Pokemon is weak to: ' + (lines) + '</span></div>';
   } else if (Object.keys(yourWeaknesses).length > 0) {
-    alertsEl.innerHTML = `<div class="success-msg">(ok) None of these moves hit a weakness on your Pokemon.</div>`;
+    alertsEl.innerHTML = '<div class="success-msg">(ok) None of these moves hit a weakness on your Pokemon.</div>';
   }
 }
 
@@ -1175,7 +1172,8 @@ function checkEnemyWarnings() {
 }
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
-function capitalize(s) {urn s.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+function capitalize(s) {
+  return s.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
