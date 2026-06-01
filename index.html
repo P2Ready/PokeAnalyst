@@ -220,7 +220,8 @@
   .type-badge {
     padding: 0.2rem 0.65rem;
     border-radius: 20px;
-    font-size: 0.72rem;
+    font-size: 0.84rem;
+    font-weight: 700;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -229,7 +230,8 @@
 
   /* ── Section labels ── */
   .section-label {
-    font-size: 0.72rem;
+    font-size: 0.84rem;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.12em;
     color: var(--muted);
@@ -498,6 +500,91 @@
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+  /* ── Move tooltip ── */
+  .move-item {
+    position: relative;
+  }
+  .move-tooltip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    background: #0d0f14;
+    border: 1px solid rgba(79,195,247,0.3);
+    border-radius: 10px;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.82rem;
+    color: var(--text);
+    line-height: 1.5;
+    z-index: 300;
+    pointer-events: none;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  }
+  .move-item:hover .move-tooltip { display: block; }
+
+  /* ── Base stats ── */
+  .stats-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-top: 0.25rem;
+  }
+  .stat-row {
+    display: grid;
+    grid-template-columns: 90px 36px 1fr;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.78rem;
+  }
+  .stat-label {
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    font-size: 0.7rem;
+    white-space: nowrap;
+  }
+  .stat-value {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 0.88rem;
+    text-align: right;
+    color: var(--text);
+  }
+  .stat-bar-track {
+    height: 6px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .stat-bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.5s ease;
+  }
+  .stat-total-row {
+    display: grid;
+    grid-template-columns: 90px 36px 1fr;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.3rem;
+    border-top: 1px solid var(--border);
+    padding-top: 0.35rem;
+  }
+  .stat-total-label {
+    color: var(--muted);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+  }
+  .stat-total-value {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 0.88rem;
+    text-align: right;
+    color: var(--text);
+  }
 </style>
 </head>
 <body>
@@ -542,11 +629,17 @@
       <div class="section-label">Weaknesses</div>
       <div class="weakness-grid" id="yours-weaknesses"><span style="color:var(--muted);font-size:0.85rem">—</span></div>
 
+      <hr class="divider">
       <div class="section-label">Resistances</div>
       <div class="weakness-grid" id="yours-resistances"><span style="color:var(--muted);font-size:0.85rem">—</span></div>
 
+      <hr class="divider">
       <div class="section-label">Immunities</div>
       <div class="weakness-grid" id="yours-immunities"><span style="color:var(--muted);font-size:0.85rem">—</span></div>
+
+      <hr class="divider">
+      <div class="section-label">Base Stats</div>
+      <div class="stats-grid" id="yours-stats"></div>
 
       <div class="status-line" id="yours-status"></div>
     </div>
@@ -575,11 +668,17 @@
       <div class="section-label">Weaknesses</div>
       <div class="weakness-grid" id="enemy-weaknesses"><span style="color:var(--muted);font-size:0.85rem">—</span></div>
 
+      <hr class="divider">
       <div class="section-label">Resistances</div>
       <div class="weakness-grid" id="enemy-resistances"><span style="color:var(--muted);font-size:0.85rem">—</span></div>
 
+      <hr class="divider">
       <div class="section-label">Immunities</div>
       <div class="weakness-grid" id="enemy-immunities"><span style="color:var(--muted);font-size:0.85rem">—</span></div>
+
+      <hr class="divider">
+      <div class="section-label">Base Stats</div>
+      <div class="stats-grid" id="enemy-stats"></div>
 
       <hr class="divider">
 
@@ -864,13 +963,54 @@ function renderTypeBreakdown(weakMap, weakElId, resistElId, immuneElId) {
   immuneEl.innerHTML = iHtml || '<span style="color:var(--muted);font-size:0.82rem">None</span>';
 }
 
+
+// ─── Stats renderer ───────────────────────────────────────────────────────────
+const STAT_META = [
+  { key: 'hp',              label: 'HP',         color: '#e53935' },
+  { key: 'attack',         label: 'Attack',     color: '#e64a19' },
+  { key: 'defense',        label: 'Defense',    color: '#f9a825' },
+  { key: 'special-attack', label: 'Sp. Atk',   color: '#6a1b9a' },
+  { key: 'special-defense',label: 'Sp. Def',   color: '#1565c0' },
+  { key: 'speed',          label: 'Speed',      color: '#00838f' },
+];
+const STAT_MAX = 255; // highest possible base stat
+
+function renderStats(statsArray, containerId) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const map = {};
+  statsArray.forEach(s => { map[s.stat.name] = s.base_stat; });
+  const total = Object.values(map).reduce((a,b) => a+b, 0);
+
+  let html = '';
+  for (const { key, label, color } of STAT_META) {
+    const val = map[key] ?? 0;
+    const pct = Math.round((val / STAT_MAX) * 100);
+    html += `
+      <div class="stat-row">
+        <div class="stat-label">${label}</div>
+        <div class="stat-value">${val}</div>
+        <div class="stat-bar-track">
+          <div class="stat-bar-fill" style="width:${pct}%;background:${color}"></div>
+        </div>
+      </div>`;
+  }
+  html += `
+    <div class="stat-total-row">
+      <div class="stat-total-label">Total</div>
+      <div class="stat-total-value">${total}</div>
+      <div></div>
+    </div>`;
+  el.innerHTML = html;
+}
+
 // ─── Your Pokemon ─────────────────────────────────────────────────────────────
 async function loadYourPokemon(name) {
   const status = document.getElementById('yours-status');
   status.innerHTML = '<span class="loader"></span> Loading…';
 
   try {
-    const poke = await fetchPokemon(name);
+  const poke = await fetchPokemon(name);
     const types = poke.types.map(t => t.type.name);
 
     const img = poke.sprites?.other?.['official-artwork']?.front_default || poke.sprites?.front_default;
@@ -888,6 +1028,7 @@ async function loadYourPokemon(name) {
     for (const [t,m] of Object.entries(weakMap)) { if (m >= 2) yourWeaknesses[t] = m; }
 
     renderTypeBreakdown(weakMap, 'yours-weaknesses', 'yours-resistances', 'yours-immunities');
+    renderStats(poke.stats, 'yours-stats');
     status.textContent = '';
     checkEnemyWarnings();
 
@@ -901,7 +1042,7 @@ let enemyData = null;
 
 async function loadEnemyPokemon(name) {
   const status = document.getElementById('enemy-status');
-  status.innerHTML = '<span class="loader"></span> Loading…';
+  status.innerHTML  '<span class="loader"></span> Loading…';
   document.getElementById('enemy-moves').innerHTML = '<span style="color:var(--muted);font-size:0.85rem">—</span>';
   document.getElementById('enemy-alerts').innerHTML = '';
   enemyData = null;
@@ -913,7 +1054,7 @@ async function loadEnemyPokemon(name) {
     const types = poke.types.map(t => t.type.name);
 
     const img = poke.sprites?.other?.['official-artwork']?.front_default || poke.sprites?.front_default;
-    const imgWrap = document.querySelector('#panel-enemy .poke-img-wrap');
+    const imgWrapocument.querySelector('#panel-enemy .poke-img-wrap');
     imgWrap.innerHTML = img ? `<img src="${img}" alt="${name}">` : '<span class="placeholder">?</span>';
 
     document.getElementById('enemy-name').textContent = capitalize(name);
@@ -923,6 +1064,7 @@ async function loadEnemyPokemon(name) {
     ).join('');
 
     renderTypeBreakdown(calcWeaknesses(types), 'enemy-weaknesses', 'enemy-resistances', 'enemy-immunities');
+    renderStats(poke.stats, 'enemy-stats');
     document.getElementById('find-moves-btn').disabled = false;
     status.textContent = '';
     updatePartyWarnings();
@@ -934,7 +1076,7 @@ async function loadEnemyPokemon(name) {
 
 document.getElementById('find-moves-btn').addEventListener('click', async () => {
   if (!enemyData) return;
-  const level = parseInt(document.getElementById('enemy-level').value) || 50;
+  const level = parseInt(ument.getElementById('enemy-level').value) || 50;
   await findEnemyMoves(level);
 });
 
@@ -948,7 +1090,7 @@ async function findEnemyMoves(level) {
     const XY_GROUP = 'x-y';
     const levelUpMoves = enemyData.moves
       .map(m => {
-        const xyDetail = m.version_group_details.find(v =>
+        const xyDetail = m.version_group_detailfind(v =>
           v.version_group.name === XY_GROUP && v.move_learn_method.name === 'level-up'
         );
         if (!xyDetail || xyDetail.level_learned_at < 1 || xyDetail.level_learned_at > level) return null;
@@ -967,7 +1109,11 @@ async function findEnemyMoves(level) {
     const movesWithTypes = await Promise.all(levelUpMoves.map(async m => {
       try {
         const data = await fetchJSON(`${API}/move/${m.name}`);
-        return { ...m, type: data.type.name, power: data.power, damageClass: data.damage_class?.name };
+        const flavorEntry = (data.flavor_text_entries || []).find(e =>
+            e.language.name === 'en' && (e.version_group?.name === 'x-y' || true)
+          );
+        const flavor = flavorEntry ? flavorEntry.flavor_text.replace(/\f|\n/g, ' ').trim() : '';
+        return { ...m, type: data.type.name, power: data.power, damageClass: data.damage_class?.name, flavor };
       } catch {
         return { ...m, type: 'unknown', power: null };
       }
@@ -979,7 +1125,7 @@ async function findEnemyMoves(level) {
     status.textContent = `Last ${movesWithTypes.length} move(s) learned at or before level ${level}`;
 
   } catch(e) {
-    status.textContent = '⚠ Could not load moves.';
+    status.textContent = '⚠ Could noload moves.';
   }
 }
 
@@ -1002,10 +1148,10 @@ function renderEnemyMoves(moves) {
     const powerTxt  = m.power ? `${m.power} PWR` : (m.damageClass === 'status' ? 'Status' : '—');
 
     div.innerHTML = `
+      ${m.flavor ? `<div class="move-tooltip">${m.flavor}</div>` : ''}
       <div class="move-name">${capitalize(m.name.replace(/-/g,' '))}</div>
       <div class="move-meta">
-        ${isWeakness ? `<span class="warn-icon">${mult >= 4 ? '🔴' : '⚠️'}</span>` : ''}
-        <span class="type-badge" style="background:${typeColor};padding:0.15rem 0.5rem;font-8rem">${m.type}</span>
+        ${isWeakness ? `<span class="warn-icon">${mult >= 4 ? '🔴' : '⚠️'}</span>` : ''  <span class="type-badge" style="background:${typeColor};padding:0.15rem 0.5rem;font-size:0.68rem">${m.type}</span>
         <span>${powerTxt}</span>
         <span style="color:var(--muted)">Lv.${m.learnedAt}</span>
       </div>
@@ -1018,7 +1164,7 @@ function renderEnemyMoves(moves) {
     const lines = warningMoves.map(m =>
       `<strong style="text-transform:capitalize">${m.name.replace(/-/g,' ')}</strong> (${m.type}, ×${m.mult} damage)`
     ).join(', ');
-    alertsEl.innerHTML = `div class="alert">⚠️ <span>Danger! This enemy knows move(s) your Pokémon is weak to: ${lines}</span></div>`;
+    alertsEl.innerHTML = `<div class="alert">⚠️ <span>Danger! This enemy knows move(s) your Pokémon is weak to: ${lines}</span></div>`;
   } else if (Object.keys(yourWeaknesses).length > 0) {
     alertsEl.innerHTML = `<div class="success-msg">✓ None of these moves hit a weakness on your Pokémon.</div>`;
   }
@@ -1028,7 +1174,7 @@ function checkEnemyWarnings() {
   if (lastEnemyMoves.length > 0) renderEnemyMoves(lastEnemyMoves);
 }
 
-// ─── Utilities ───────────────────────────────â──────────────────
+// ─── Utilities ─────────────────────────────────────────────────
 function capitalize(s) {
   return s.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
@@ -1036,9 +1182,9 @@ function capitalize(s) {
 // ─── Init ─────────────────────────────────────────────────────────────────────
 (async () => {
   try {
-    await loadPokemonList();
+    ait loadPokemonList();
     buildPartySlots();
-    setupSearch(document.getElementById('yoput'), document.getElementById('yours-dropdown'), loadYourPokemon);
+    setupSearch(document.getElementById('yours-input'), document.getElementById('yours-dropdown'), loadYourPokemon);
     setupSearch(document.getElementById('enemy-input'), document.getElementById('enemy-dropdown'), loadEnemyPokemon);
   } catch(e) {
     console.error('Failed to load Pokémon list', e);
