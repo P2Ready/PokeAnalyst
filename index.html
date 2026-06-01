@@ -611,7 +611,7 @@
       <h2>Your Pokémon</h2>
 
       <div class="search-wrap">
-        <span class="icon">🔍</span>
+        <span class="icon">&#128269;</span>
         <input type="text" id="yours-input" placeholder="Search Pokémon…" autocomplete="off" />
         <div class="dropdown" id="yours-dropdown"></div>
       </div>
@@ -650,7 +650,7 @@
       <h2>Enemy Pokémon</h2>
 
       <div class="search-wrap">
-        <span class="icon">🔍</span>
+        <span class="icon">&#128269;</span>
         <input type="text" id="enemy-input" placeholder="Search Pokémon…" autocomplete="off" />
         <div class="dropdown" id="enemy-dropdown"></div>
       </div>
@@ -833,15 +833,15 @@ function buildPartySlots() {
           <div class="party-slot-types" id="party-types-${i}"></div>
           <div class="party-search-wrap">
             <div class="search-wrap" style="margin-bottom:0">
-              <span class="icon" style="font-size:0.8rem">🔍</span>
-              <input type="text" id="party-input-${i}" placeholder="Search…" autocomplete="off"
+              <span class="icon" style="font-size:0.8rem">&#128269;</span>
+              <input type="text" id="party-input-${i}" placeholder="Search..." autocomplete="off"
                 style="padding:0.45rem 0.75rem 0.45rem 2rem;font-size:0.8rem;border-radius:8px;" />
               <div class="dropdown" id="party-dropdown-${i}"></div>
             </div>
           </div>
         </div>
       </div>
-      <div class="party-warn-badge" id="party-warn-${i}">⚠ DANGER</div>
+      <div class="party-warn-badge" id="party-warn-${i}">(!) DANGER</div>
     `;
     container.appendChild(slot);
 
@@ -865,7 +865,7 @@ async function loadPartyMember(idx, name) {
   const imgEl    = document.getElementById(`party-img-${idx}`);
   const typesEl  = document.getElementById(`party-types-${idx}`);
 
-  nameEl.textContent = '…';
+  nameEl.textContent = '...';
   nameEl.style.color = 'var(--muted)';
 
   try {
@@ -889,7 +889,7 @@ async function loadPartyMember(idx, name) {
     updatePartyWarnings();
 
   } catch(e) {
-    nameEl.textContent = '⚠ Not found';
+    nameEl.textContent = '(!) Not found';
     partyData[idx] = null;
   }
 }
@@ -918,10 +918,10 @@ function updatePartyWarnings() {
 
     if (maxMult >= 4) {
       slot.classList.add('slot-danger');
-      warnEl.textContent = '⚠ DANGER ×4';
+      warnEl.textContent = '&#9888; DANGER x4';
     } else if (maxMult >= 2) {
       slot.classList.add('slot-warn');
-      warnEl.textContent = '⚠ WEAK ×2';
+      warnEl.textContent = '&#9888; WEAK x2';
     } else {
       slot.classList.add('slot-safe');
     }
@@ -944,21 +944,21 @@ function renderTypeBreakdown(weakMap, weakElId, resistElId, immuneElId) {
 
   let wHtml = '';
   [...weak4,...weak2].forEach(({type,mult}) => {
-    const label = mult >= 4 ? '×4' : '×2';
+    const label = mult >= 4 ? 'x4' : 'x2';
     wHtml += `<div class="weakness-chip" style="background:${TYPE_COLORS[type]||'#555'}">${type} <span class="multiplier">${label}</span></div>`;
   });
   weakEl.innerHTML = wHtml || '<span style="color:var(--muted);font-size:0.82rem">None</span>';
 
   let rHtml = '';
   resist.sort((a,b)=>a.mult-b.mult).forEach(({type,mult}) => {
-    const label = mult <= 0.25 ? '×¼' : '×½';
+    const label = mult <= 0.25 ? 'x0.25' : 'x0.5';
     rHtml += `<div class="resist-chip" style="background:${TYPE_COLORS[type]||'#555'}">${type} <span class="multiplier">${label}</span></div>`;
   });
   resistEl.innerHTML = rHtml || '<span style="color:var(--muted);font-size:0.82rem">None</span>';
 
   let iHtml = '';
   immune.forEach(({type}) => {
-    iHtml += `<div class="immune-chip" style="border-color:${TYPE_COLORS[type]||'#555'}">${type} <span class="multiplier">×0</span></div>`;
+    iHtml += `<div class="immune-chip" style="border-color:${TYPE_COLORS[type]||'#555'}">${type} <span class="multiplier">x0</span></div>`;
   });
   immuneEl.innerHTML = iHtml || '<span style="color:var(--muted);font-size:0.82rem">None</span>';
 }
@@ -1004,16 +1004,15 @@ function renderStats(statsArray, containerId) {
   el.innerHTML = html;
 }
 
-// ─── Your Pokemon ─────────────────────────────────────────────────────
-async function loadYourPokemon(name) {
+// ─── Your Pokemon ────────────────────────────────────────────────────────────âloadYourPokemon(name) {
   const status = document.getElementById('yours-status');
-  status.innerHTML = '<span class="loader"></span> Loading…';
+  status.innerHTML = '<span class="loader"></span> Loading...';
 
   try {
     const poke = await fetchPokemon(name);
     const types = poke.types.map(t => t.type.name);
 
-    const img = poke.sprites?.other?.['official-artwork']?.front_default || poke.sprites?ault;
+    const img = poke.sprites?.other?.['official-artwork']?.front_default || poke.sprites?.front_default;
     const imgWrap = document.querySelector('#panel-yours .poke-img-wrap');
     imgWrap.innerHTML = img ? `<img src="${img}" alt="${name}">` : '<span class="placeholder">?</span>';
 
@@ -1033,25 +1032,25 @@ async function loadYourPokemon(name) {
     checkEnemyWarnings();
 
   } catch(e) {
-    status.textContent = '⚠ Could not load Pokémon.';
+    status.textContent = '(!) Could not load Pokemon.';
   }
 }
 
-// ─── Enemy Pokemon â─────────────────────────────────────────────────
+// ─── Enemy Pokemon ──────────────────────────────────────────────────────────
 let enemyData = null;
 
 async function loadEnemyPokemon(name) {
   const status = document.getElementById('enemy-status');
-  status.innerHTML = '<span class="loader"></span> Loading…';
-  document.getElementById('enemy-moves').innerHTML = '<span style="color:var(--muted);font-size:0.85rem">—</span>';
+  status.innerHTML = '<span class="loader"></span> Loading...';
+  document.getElementById('enemy-moves').innerHTML = '<span style="color:var(--muted);font-size:0.85rem">&#8212;</span>';
   document.getElementById('enemy-alerts').innerHTML = '';
-ata = null;
+  enemyData = null;
   lastEnemyMoves = [];
 
   try {
     const poke = await fetchPokemon(name);
     enemyData = poke;
-    const types = poke.types.map(t => t.type.name);
+    const types =pes.map(t => t.type.name);
 
     const img = poke.sprites?.other?.['official-artwork']?.front_default || poke.sprites?.front_default;
     const imgWrap = document.querySelector('#panel-enemy .poke-img-wrap');
@@ -1070,7 +1069,7 @@ ata = null;
     updatePartyWarnings();
 
   } catch(e) {
-    status.textContent = '⚠ Could not load Pokémon.';
+    status.textContent = '(!) Could not load Pokemon.';
   }
 }
 
@@ -1082,7 +1081,7 @@ document.getElementById('find-moves-btn').addEventListener('click', async () => 
 
 async function findEnemyMoves(level) {
   const status = document.getElementById('enemy-status');
-  status.innerHTML = '<span class="loa"></span> Fetching moves…';
+  status.innerHTML = '<span class="loader"></span> Fetching moves...';
   document.getElementById('enemy-moves').innerHTML = '';
   document.getElementById('enemy-alerts').innerHTML = '';
 
@@ -1094,7 +1093,7 @@ async function findEnemyMoves(level) {
           v.version_group.name === XY_GROUP && v.move_learn_method.name === 'level-up'
         );
         if (!xyDetail || xyDetail.level_learned_at < 1 || xyDetail.level_learned_at > level) return null;
-        turn { name: m.move.name, learnedAt: xyDetail.level_learned_at };
+        return { name: m.move.name, learnedAt: xyDetail.level_learned_at };
       })
       .filter(Boolean)
       .sort((a,b) => b.learnedAt - a.learnedAt || a.name.localeCompare(b.name))
@@ -1125,7 +1124,7 @@ async function findEnemyMoves(level) {
     status.textContent = `Last ${movesWithTypes.length} move(s) learned at or before level ${level}`;
 
   } catch(e) {
-    status.textContent = '⚠ Could not load moves.';
+    status.textContent = '(!) Could not load moves.';
   }
 }
 
@@ -1133,7 +1132,7 @@ function renderEnemyMoves(moves) {
   const container = document.getElementById('enemy-moves');
   const alertsEl  = document.getElementById('enemy-alerts');
   container.innerHTML = '';
-  alertsEl.innerHL = '';
+  alertsEl.innerHTML = '';
 
   const warningMoves = [];
 
@@ -1145,16 +1144,16 @@ function renderEnemyMoves(moves) {
     div.className = 'move-item' + (isWeakness && mult >= 4 ? ' danger-move' : isWeakness ? ' warning-move' : '');
 
     const typeColor = TYPE_COLORS[m.type] || '#555';
-    const powerTxt  = m.power ? `${m.power} PWR` : (m.damageClass === 'status' ? 'Status' : '—');
+    const powerTxt  = m.power ? `${m.power} PWR` : (m.damageClass === 'status' ? 'Status' : '&#8212;');
 
-   onst tooltipHtml = m.flavor ? '<div class="move-tooltip">' + m.flavor + '</div>' : '';
-    const warnHtml = isWeakness ? '<span class="warn-icon">' + (mult >= 4 ? '🔴' : '⚠️') + '</span>' : '';
+    const tooltipHtml = m.flavor ? '<div class="move-tooltip">' + m.flavor + '</div>' : '';
+    const warnHtml = isWeakness ? '<span class="warn-icon">' + (mult >= 4 ? '&#128308;' : '&#9888;') + '</span>' : '';
     div.innerHTML = tooltipHtml +
       '<div class="move-name">' + capitalize(m.name.replace(/-/g,' ')) + '</div>' +
       '<div class="move-meta">' +
         warnHtml +
         '<span class="type-badge" style="background:' + typeColor + ';padding:0.15rem 0.5rem;font-size:0.68rem">' + m.type + '</span>' +
-    span>' + powerTxt + '</span>' +
+        '<span>' + powerTxt + '</span>' +
         '<span style="color:var(--muted)">Lv.' + m.learnedAt + '</span>' +
       '</div>';
     container.appendChild(div);
@@ -1163,11 +1162,11 @@ function renderEnemyMoves(moves) {
 
   if (warningMoves.length > 0 && Object.keys(yourWeaknesses).length > 0) {
     const lines = warningMoves.map(m =>
-      `<strong style="text-transform:capitalize">${m.name.replace(/-/g,' ')}</strong> (${m.type}, ×${m.mult} damage)`
+      `<strong style="text-transform:capitalize">${m.name.replace(/-/g,' ')}</strong> (${m.type}, x${m.mult} damage)`
     ).join(', ');
-    alertsEl.innerHTML = `<div class="alert">️ <span>Danger! This enemy knows move(s) your Pokémon is weak to: ${lines}</span></div>`;
+    alertsEl.innerHTML = `<div class="alert">(!!) <span>Danger! This enemy knows move(s) your Pokemon is weak to: ${lines}</span></div>`;
   } else if (Object.keys(yourWeaknesses).length > 0) {
-    alertsEl.innerHTML = `<div class="success-msg">✓ None of these moves hit a weakness on your Pokémon.</div>`;
+    alertsEl.innerHTML = `<div class="success-msg">(ok) None of these moves hit a weakness on your Pokemon.</div>`;
   }
 }
 
@@ -1175,9 +1174,9 @@ function checkEnemyWarnings() {
   if (lastEnemyMoves.length > 0) renderEnemyMoves(lastEnemyMoves);
 }
 
-// ─── Utilities ──────────────────────────────────────â───────────────
+// ─── Utilities ────────────────────────────────────────────────────────────────
 function capitalize(s) {
-  return s.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  return t('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
@@ -1188,7 +1187,7 @@ function capitalize(s) {
     setupSearch(document.getElementById('yours-input'), document.getElementById('yours-dropdown'), loadYourPokemon);
     setupSearch(document.getElementById('enemy-input'), document.getElementById('enemy-dropdown'), loadEnemyPokemon);
   } catch(e) {
-    console.error('Failed to load Pokémon list', e);
+    console.error('Failed to load Pokemon list', e);
   }
 })();
 </script>
