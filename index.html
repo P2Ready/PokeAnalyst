@@ -796,7 +796,7 @@ function setupSearch(inputEl, dropdownEl, onSelect) {
     const items = dropdownEl.querySelectorAll('.dropdown-item');
     if (e.key === 'ArrowDown') { highlighted = Math.min(highlighted+1, items.length-1); refresh(items); e.preventDefault(); }
     else if (e.key === 'ArrowUp') { highlighted = Math.max(highlighted-1, -1); refresh(items); e.preventDefault(); }
-    else if (e.key === 'Enter') { selectItem(highlighted >= 0 && currentItems[highlighted] ? currentItems[highlighted].name : currentItems[0]?.name); }
+    else if (e.key === 'Enter') { selectItem(highlighted >= 0 && currentItems[highlighted] ? currentItems[highlighted].name : currentItems[0] && currentItems[0].name); }
     else if (e.key === 'Escape') dropdownEl.classList.remove('open');
   });
 
@@ -874,7 +874,7 @@ async function loadPartyMember(idx, name) {
     const weakMap = calcWeaknesses(types);
     partyData[idx] = { name, types, weakMap };
 
-    const img = poke.sprites?.other?.['official-artwork']?.front_default || poke.sprites?.front_default;
+    const img = (poke.sprites && poke.sprites.other && poke.sprites.other['official-artwork'] && poke.sprites.other['official-artwork'].front_default) || (poke.sprites && poke.sprites.front_default);
     imgEl.innerHTML = img
       ? `<img src="${img}" alt="${name}">`
       : '<span class="mini-placeholder">?</span>';
@@ -1004,7 +1004,8 @@ function renderStats(statsArray, containerId) {
   el.innerHTML = html;
 }
 
-// ─── Your Pokemon ────────────────────────────────────────────────────────────âloadYourPokemon(name) {
+// ─── Your Pokemon ───────────────────────────────────────────────
+async function loadYourPokemon(name) {
   const status = document.getElementById('yours-status');
   status.innerHTML = '<span class="loader"></span> Loading...';
 
@@ -1012,8 +1013,8 @@ function renderStats(statsArray, containerId) {
     const poke = await fetchPokemon(name);
     const types = poke.types.map(t => t.type.name);
 
-    const img = poke.sprites?.other?.['official-artwork']?.front_default || poke.sprites?.front_default;
-    const imgWrap = document.querySelector('#panel-yours .poke-img-wrap');
+    const img = (poke.sprites && poke.sprites.other && poke.sprites.other['official-artwork'] && poke.sprites.other['official-artwork'].front_default) || (poke.sprites && poke.sprites.front_default);
+    const imgWrap = document.querySe('#panel-yours .poke-img-wrap');
     imgWrap.innerHTML = img ? `<img src="${img}" alt="${name}">` : '<span class="placeholder">?</span>';
 
     document.getElementById('yours-name').textContent = capitalize(name);
@@ -1036,7 +1037,7 @@ function renderStats(statsArray, containerId) {
   }
 }
 
-// ─── Enemy Pokemon ──────────────────────────────────────────────────────────
+// ─── Enemy Pokemon ────────────────â───────────────────────────────────
 let enemyData = null;
 
 async function loadEnemyPokemon(name) {
@@ -1045,14 +1046,12 @@ async function loadEnemyPokemon(name) {
   document.getElementById('enemy-moves').innerHTML = '<span style="color:var(--muted);font-size:0.85rem">&#8212;</span>';
   document.getElementById('enemy-alerts').innerHTML = '';
   enemyData = null;
-  lastEnemyMoves = [];
-
-  try {
+  lastEnemyMoves =try {
     const poke = await fetchPokemon(name);
     enemyData = poke;
-    const types =pes.map(t => t.type.name);
+    const types = poke.types.map(t => t.type.name);
 
-    const img = poke.sprites?.other?.['official-artwork']?.front_default || poke.sprites?.front_default;
+    const img = (poke.sprites && poke.sprites.other && poke.sprites.other['official-artwork'] && poke.sprites.other['official-artwork'].front_default) || (poke.sprites && poke.sprites.front_default);
     const imgWrap = document.querySelector('#panel-enemy .poke-img-wrap');
     imgWrap.innerHTML = img ? `<img src="${img}" alt="${name}">` : '<span class="placeholder">?</span>';
 
@@ -1109,10 +1108,10 @@ async function findEnemyMoves(level) {
       try {
         const data = await fetchJSON(`${API}/move/${m.name}`);
         const flavorEntry = (data.flavor_text_entries || []).find(e =>
-            e.language.name === 'en' && (e.version_group?.name === 'x-y' || true)
+            e.language.name === 'en' && (e.version_group && e.version_group.name === 'x-y' || true)
           );
         const flavor = flavorEntry ? flavorEntry.flavor_text.replace(/\f|\n/g, ' ').trim() : '';
-        return { ...m, type: data.type.name, power: data.power, damageClass: data.damage_class?.name, flavor };
+        return { ...m, type: data.type.name, power: data.power, damageClass: (data.damage_class && data.damage_class.name), flavor };
       } catch {
         return { ...m, type: 'unknown', power: null };
       }
@@ -1174,13 +1173,12 @@ function checkEnemyWarnings() {
   if (lastEnemyMoves.length > 0) renderEnemyMoves(lastEnemyMoves);
 }
 
-// ─── Utilities ────────────────────────────────────────────────────────────────
+// ─── Utilit──────────────────────────────────────────────────────────────
 function capitalize(s) {
-  return t('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  return s.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
-// ─── Init ─────────────────────────────────────────────────────────────────────
-(async () => {
+// ─── Init ─────────────────────────────────────────────────────────────────âsync () => {
   try {
     await loadPokemonList();
     buildPartySlots();
