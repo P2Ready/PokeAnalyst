@@ -643,6 +643,37 @@
     cursor: pointer;
     flex: 1;
   }
+
+  /* ── Mega Evolution toggle ── */
+  .mega-toggle {
+    display: none;
+    margin-top: 0.6rem;
+    align-items: center;
+    gap: 0.7rem;
+    background: rgba(232,71,63,0.08);
+    border: 1px solid rgba(232,71,63,0.3);
+    border-radius: 10px;
+    padding: 0.5rem 0.85rem;
+    font-size: 0.82rem;
+    color: #ff8a80;
+    font-weight: 600;
+  }
+  .mega-toggle.visible { display: flex; }
+  .mega-toggle label { cursor: pointer; display: flex; align-items: center; gap: 0.45rem; white-space: nowrap; user-select: none; }
+  .mega-toggle input[type=checkbox] { accent-color: #e8473f; width: 15px; height: 15px; cursor: pointer; }
+  .mega-toggle select {
+    background: var(--surface2);
+    border: 1px solid rgba(232,71,63,0.4);
+    border-radius: 7px;
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.8rem;
+    padding: 0.2rem 0.5rem;
+    outline: none;
+    cursor: pointer;
+    display: none;
+  }
+  .mega-toggle select.visible { display: block; }
 </style>
 </head>
 <body>
@@ -676,6 +707,10 @@
       <div class="arceus-picker" id="yours-arceus-picker">
         <label>&#9670; Arceus type:</label>
         <select id="yours-arceus-type"></select>
+      </div>
+      <div class="mega-toggle" id="yours-mega-toggle">
+        <label><input type="checkbox" id="yours-mega-cb"> &#9889; Mega Evolve</label>
+        <select id="yours-mega-form"></select>
       </div>
 
       <div class="poke-display">
@@ -719,6 +754,10 @@
       <div class="arceus-picker" id="enemy-arceus-picker">
         <label>&#9670; Arceus type:</label>
         <select id="enemy-arceus-type"></select>
+      </div>
+      <div class="mega-toggle" id="enemy-mega-toggle">
+        <label><input type="checkbox" id="enemy-mega-cb"> &#9889; Mega Evolve</label>
+        <select id="enemy-mega-form"></select>
       </div>
 
       <div class="poke-display">
@@ -781,7 +820,7 @@ const TYPE_CHART = {
   psychic:  {psychic:0.5, steel:0.5, dark:0, fighting:2, poison:2},
   bug:      {fire:0.5, fighting:0.5, flying:0.5, ghost:0.5, steel:0.5, fairy:0.5, poison:0.5, grass:2, psychic:2, dark:2},
   rock:     {fighting:0.5, ground:0.5, steel:0.5, fire:2, ice:2, flying:2, bug:2},
-  ghost:    {normal:0, fighting:0, ghost:2, psychic:2, dark:0.5},
+  ghost:    {normal:0, ghost:2, psychic:2, dark:0.5},
   dragon:   {steel:0.5, fairy:0, dragon:2},
   dark:     {fighting:0.5, fairy:0.5, dark:0.5, ghost:2, psychic:2},
   steel:    {fire:0.5, water:0.5, electric:0.5, steel:0.5, rock:2, ice:2, fairy:2},
@@ -1175,6 +1214,130 @@ function hideArceusPicker(pickerId) {
   document.getElementById(pickerId).classList.remove('visible');
 }
 
+
+// ─── Mega Evolution ───────────────────────────────────────────────────────────
+// All 28 X/Y mega evolutions: base pokemon name -> array of {label, apiName}
+const MEGA_MAP = {
+  'venusaur':    [{label:'Mega Venusaur',    api:'venusaur-mega'}],
+  'charizard':   [{label:'Mega Charizard X', api:'charizard-mega-x'}, {label:'Mega Charizard Y', api:'charizard-mega-y'}],
+  'blastoise':   [{label:'Mega Blastoise',   api:'blastoise-mega'}],
+  'alakazam':    [{label:'Mega Alakazam',    api:'alakazam-mega'}],
+  'gengar':      [{label:'Mega Gengar',      api:'gengar-mega'}],
+  'kangaskhan':  [{label:'Mega Kangaskhan',  api:'kangaskhan-mega'}],
+  'pinsir':      [{label:'Mega Pinsir',      api:'pinsir-mega'}],
+  'gyarados':    [{label:'Mega Gyarados',    api:'gyarados-mega'}],
+  'aerodactyl':  [{label:'Mega Aerodactyl',  api:'aerodactyl-mega'}],
+  'mewtwo':      [{label:'Mega Mewtwo X',    api:'mewtwo-mega-x'}, {label:'Mega Mewtwo Y', api:'mewtwo-mega-y'}],
+  'ampharos':    [{label:'Mega Ampharos',    api:'ampharos-mega'}],
+  'scizor':      [{label:'Mega Scizor',      api:'scizor-mega'}],
+  'heracross':   [{label:'Mega Heracross',   api:'heracross-mega'}],
+  'houndoom':    [{label:'Mega Houndoom',    api:'houndoom-mega'}],
+  'tyranitar':   [{label:'Mega Tyranitar',   api:'tyranitar-mega'}],
+  'blaziken':    [{label:'Mega Blaziken',    api:'blaziken-mega'}],
+  'gardevoir':   [{label:'Mega Gardevoir',   api:'gardevoir-mega'}],
+  'mawile':      [{label:'Mega Mawile',      api:'mawile-mega'}],
+  'aggron':      [{label:'Mega Aggron',      api:'aggron-mega'}],
+  'medicham':    [{label:'Mega Medicham',    api:'medicham-mega'}],
+  'manectric':   [{label:'Mega Manectric',   api:'manectric-mega'}],
+  'banette':     [{label:'Mega Banette',     api:'banette-mega'}],
+  'absol':       [{label:'Mega Absol',       api:'absol-mega'}],
+  'garchomp':    [{label:'Mega Garchomp',    api:'garchomp-mega'}],
+  'lucario':     [{label:'Mega Lucario',     api:'lucario-mega'}],
+  'abomasnow':   [{label:'Mega Abomasnow',   api:'abomasnow-mega'}],
+};
+
+function setupMegaToggle(panel, baseName) {
+  var toggleEl = document.getElementById(panel + '-mega-toggle');
+  var cbEl     = document.getElementById(panel + '-mega-cb');
+  var selEl    = document.getElementById(panel + '-mega-form');
+  var forms    = MEGA_MAP[baseName];
+
+  // Reset state
+  cbEl.checked = false;
+  selEl.innerHTML = '';
+  selEl.classList.remove('visible');
+
+  if (!forms) {
+    toggleEl.classList.remove('visible');
+    return;
+  }
+
+  toggleEl.classList.add('visible');
+
+  // Populate form select (only shown if multiple forms)
+  if (forms.length > 1) {
+    selEl.innerHTML = forms.map(function(f) {
+      return '<option value="' + f.api + '">' + f.label + '</option>';
+    }).join('');
+  }
+
+  // Remove old listeners by replacing element
+  var newCb = cbEl.cloneNode(true);
+  cbEl.parentNode.replaceChild(newCb, cbEl);
+  var newSel = selEl.cloneNode(true);
+  selEl.parentNode.replaceChild(newSel, selEl);
+
+  newCb.addEventListener('change', function() {
+    if (newCb.checked) {
+      if (forms.length > 1) newSel.classList.add('visible');
+      var apiName = forms.length > 1 ? newSel.value : forms[0].api;
+      applyMegaForm(panel, apiName, baseName);
+    } else {
+      newSel.classList.remove('visible');
+      revertMegaForm(panel, baseName);
+    }
+  });
+
+  if (forms.length > 1) {
+    newSel.addEventListener('change', function() {
+      if (newCb.checked) applyMegaForm(panel, newSel.value, baseName);
+    });
+  }
+}
+
+async function applyMegaForm(panel, apiName, baseName) {
+  try {
+    var poke = await fetchPokemon(apiName);
+    var types = poke.types.map(function(t) { return t.type.name; });
+    var img = (poke.sprites && poke.sprites.other && poke.sprites.other['official-artwork'] && poke.sprites.other['official-artwork'].front_default) || (poke.sprites && poke.sprites.front_default);
+    var weakMap = calcWeaknesses(types);
+
+    // Update image
+    var imgWrap = document.querySelector('#panel-' + panel + ' .poke-img-wrap');
+    if (imgWrap && img) imgWrap.innerHTML = '<img src="' + img + '" alt="' + apiName + '">';
+
+    // Update types
+    document.getElementById(panel + '-types').innerHTML = types.map(function(t) {
+      return '<span class="type-badge" style="background:' + (TYPE_COLORS[t]||'#555') + '">' + t + '</span>';
+    }).join('');
+
+    // Update stats
+    renderStats(poke.stats, panel + '-stats');
+
+    // Update weaknesses
+    renderTypeBreakdown(weakMap, panel + '-weaknesses', panel + '-resistances', panel + '-immunities');
+
+    if (panel === 'yours') {
+      yourWeaknesses = {};
+      for (var t in weakMap) { if (weakMap[t] >= 2) yourWeaknesses[t] = weakMap[t]; }
+      checkEnemyWarnings();
+    } else {
+      updatePartyWarnings();
+    }
+  } catch(e) {
+    console.error('Failed to load mega form', e);
+  }
+}
+
+function revertMegaForm(panel, baseName) {
+  // Just reload the base pokemon
+  if (panel === 'yours') {
+    loadYourPokemon(baseName);
+  } else {
+    loadEnemyPokemon(baseName);
+  }
+}
+
 // ─── Your Pokemon ─────────────────────────────────────────────────────────────
 async function loadYourPokemon(name) {
   // Handle Arceus form selection
@@ -1206,6 +1369,7 @@ async function loadYourPokemon(name) {
 
     renderTypeBreakdown(weakMap, 'yours-weaknesses', 'yours-resistances', 'yours-immunities');
     renderStats(poke.stats, 'yours-stats');
+    setupMegaToggle('yours', name);
     status.textContent = '';
     checkEnemyWarnings();
 
@@ -1248,6 +1412,7 @@ async function loadEnemyPokemon(name) {
 
     renderTypeBreakdown(calcWeaknesses(types), 'enemy-weaknesses', 'enemy-resistances', 'enemy-immunities');
     renderStats(poke.stats, 'enemy-stats');
+    setupMegaToggle('enemy', name);
     document.getElementById('find-moves-btn').disabled = false;
     status.textContent = '';
     updatePartyWarnings();
