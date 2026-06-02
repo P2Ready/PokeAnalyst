@@ -916,10 +916,10 @@ function updatePartyWarnings() {
 
     if (maxMult >= 4) {
       slot.classList.add('slot-danger');
-      warnEl.textContent = '&#9888; DANGER x4';
+      warnEl.innerHTML = '&#9888; DANGER x4';
     } else if (maxMult >= 2) {
       slot.classList.add('slot-warn');
-      warnEl.textContent = '&#9888; WEAK x2';
+      warnEl.innerHTML = '&#9888; WEAK x2';
     } else {
       slot.classList.add('slot-safe');
     }
