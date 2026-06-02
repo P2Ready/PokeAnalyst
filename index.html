@@ -585,6 +585,64 @@
     text-align: right;
     color: var(--text);
   }
+
+  /* ── Arceus type picker ── */
+  .arceus-picker {
+    display: none;
+    margin-top: 0.6rem;
+    align-items: center;
+    gap: 0.6rem;
+    background: rgba(124,58,237,0.1);
+    border: 1px solid rgba(124,58,237,0.35);
+    border-radius: 10px;
+    padding: 0.55rem 0.8rem;
+    font-size: 0.82rem;
+    color: #a78bfa;
+    font-weight: 600;
+  }
+  .arceus-picker.visible { display: flex; }
+  .arceus-picker label { white-space: nowrap; letter-spacing: 0.04em; }
+  .arceus-picker select {
+    background: var(--surface2);
+    border: 1px solid rgba(124,58,237,0.4);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.85rem;
+    padding: 0.3rem 0.6rem;
+    outline: none;
+    cursor: pointer;
+    flex: 1;
+  }
+  .arceus-picker select:focus { border-color: #a78bfa; }
+
+  /* ── Party Arceus type picker ── */
+  .party-arceus-pick {
+    display: none;
+    margin-top: 0.3rem;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .party-arceus-pick.visible { display: flex; }
+  .party-arceus-pick label {
+    font-size: 0.68rem;
+    color: #a78bfa;
+    font-weight: 700;
+    white-space: nowrap;
+    letter-spacing: 0.04em;
+  }
+  .party-arceus-pick select {
+    background: var(--surface);
+    border: 1px solid rgba(124,58,237,0.4);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.75rem;
+    padding: 0.2rem 0.4rem;
+    outline: none;
+    cursor: pointer;
+    flex: 1;
+  }
 </style>
 </head>
 <body>
@@ -614,6 +672,10 @@
         <span class="icon">&#128269;</span>
         <input type="text" id="yours-input" placeholder="Search Pokémon…" autocomplete="off" />
         <div class="dropdown" id="yours-dropdown"></div>
+      </div>
+      <div class="arceus-picker" id="yours-arceus-picker">
+        <label>&#9670; Arceus type:</label>
+        <select id="yours-arceus-type"></select>
       </div>
 
       <div class="poke-display">
@@ -653,6 +715,10 @@
         <span class="icon">&#128269;</span>
         <input type="text" id="enemy-input" placeholder="Search Pokémon…" autocomplete="off" />
         <div class="dropdown" id="enemy-dropdown"></div>
+      </div>
+      <div class="arceus-picker" id="enemy-arceus-picker">
+        <label>&#9670; Arceus type:</label>
+        <select id="enemy-arceus-type"></select>
       </div>
 
       <div class="poke-display">
@@ -831,6 +897,10 @@ function buildPartySlots() {
         '<div class="party-slot-info">' +
           '<div class="party-slot-name" id="party-name-' + i + '" style="color:var(--muted)">Empty</div>' +
           '<div class="party-slot-types" id="party-types-' + i + '"></div>' +
+          '<div class="party-arceus-pick" id="party-arceus-pick-' + i + '">' +
+            '<label>Type:</label>' +
+            '<select id="party-arceus-sel-' + i + '"></select>' +
+          '</div>' +
           '<div class="party-search-wrap">' +
             '<div class="search-wrap" style="margin-bottom:0">' +
               '<span class="icon" style="font-size:0.8rem">&#128269;</span>' +
@@ -847,49 +917,97 @@ function buildPartySlots() {
     const dropdownEl = document.getElementById('party-dropdown-' + (i) + '');
     setupSearch(inputEl, dropdownEl, (name) => loadPartyMember(i, name));
 
+    // Party arceus picker - use IIFE to capture i
+    (function(idx) {
+      var sel = document.getElementById('party-arceus-sel-' + idx);
+      sel.innerHTML = ARCEUS_TYPES.map(function(t) {
+        return '<option value="' + t + '">' + capitalize(t) + '</option>';
+      }).join('');
+      sel.addEventListener('change', function() {
+        overridePartyArceusType(idx, sel.value);
+      });
+    })(i);
+
     // Click the slot (not the search input) to populate "Your Pokemon"
     slot.querySelector('.party-slot-inner').addEventListener('click', (e) => {
       if (e.target.closest('.party-search-wrap')) return;
+      if (e.target.closest('.party-arceus-pick')) return;
       const pd = partyData[i];
       if (!pd) return;
       document.getElementById('yours-input').value = capitalize(pd.name);
-      loadYourPokemon(pd.name);
+      loadYourPokemon(pd.name).then(function() {
+        // If this party slot is an Arceus with a non-default type, sync the picker
+        if (pd.name === 'arceus' && pd.types && pd.types.length > 0) {
+          var type = pd.types[0];
+          var sel = document.getElementById('yours-arceus-type');
+          if (sel) {
+            sel.value = type;
+            overrideArceusType('yours', type);
+          }
+        }
+      });
     });
   }
 }
 
 async function loadPartyMember(idx, name) {
-  const nameEl   = document.getElementById('party-name-' + (idx) + '');
-  const imgEl    = document.getElementById('party-img-' + (idx) + '');
-  const typesEl  = document.getElementById('party-types-' + (idx) + '');
+  const nameEl   = document.getElementById('party-name-' + idx);
+  const imgEl    = document.getElementById('party-img-' + idx);
+  const typesEl  = document.getElementById('party-types-' + idx);
+  const pickEl   = document.getElementById('party-arceus-pick-' + idx);
+  const selEl    = document.getElementById('party-arceus-sel-' + idx);
 
   nameEl.textContent = '...';
   nameEl.style.color = 'var(--muted)';
 
+  // Show/hide arceus picker
+  if (name === 'arceus') {
+    pickEl.classList.add('visible');
+    selEl.selectedIndex = 0;
+  } else {
+    pickEl.classList.remove('visible');
+  }
+
   try {
     const poke = await fetchPokemon(name);
-    const types = poke.types.map(t => t.type.name);
+    var types = poke.types.map(t => t.type.name);
+
+    // If arceus, use the picker's selected type instead
+    if (name === 'arceus') {
+      types = [selEl.value];
+    }
+
     const weakMap = calcWeaknesses(types);
     partyData[idx] = { name, types, weakMap };
 
     const img = (poke.sprites && poke.sprites.other && poke.sprites.other['official-artwork'] && poke.sprites.other['official-artwork'].front_default) || (poke.sprites && poke.sprites.front_default);
     imgEl.innerHTML = img
-      ? '<img src="' + (img) + '" alt="' + (name) + '">'
+      ? '<img src="' + img + '" alt="' + name + '">'
       : '<span class="mini-placeholder">?</span>';
 
     nameEl.textContent = capitalize(name);
     nameEl.style.color = 'var(--text)';
     typesEl.innerHTML = types.map(t =>
-      '<span class="type-badge" style="background:' + (TYPE_COLORS[t]||'#555') + ';padding:0.15rem 0.45rem;font-size:0.65rem">' + (t) + '</span>'
+      '<span class="type-badge" style="background:' + (TYPE_COLORS[t]||'#555') + ';padding:0.15rem 0.45rem;font-size:0.65rem">' + t + '</span>'
     ).join('');
 
-    // Re-evaluate warnings with current enemy moves
     updatePartyWarnings();
 
   } catch(e) {
     nameEl.textContent = '(!) Not found';
     partyData[idx] = null;
   }
+}
+
+function overridePartyArceusType(idx, type) {
+  var pd = partyData[idx];
+  if (!pd || pd.name !== 'arceus') return;
+  var types = [type];
+  var weakMap = calcWeaknesses(types);
+  partyData[idx] = { name: 'arceus', types: types, weakMap: weakMap };
+  document.getElementById('party-types-' + idx).innerHTML =
+    '<span class="type-badge" style="background:' + (TYPE_COLORS[type]||'#555') + ';padding:0.15rem 0.45rem;font-size:0.65rem">' + type + '</span>';
+  updatePartyWarnings();
 }
 
 function updatePartyWarnings() {
@@ -1000,8 +1118,71 @@ function renderStats(statsArray, containerId) {
   el.innerHTML = html;
 }
 
+
+// ─── Arceus ───────────────────────────────────────────────────────────────────
+const ARCEUS_TYPES = [
+  'normal','fire','water','electric','grass','ice','fighting','poison',
+  'ground','flying','psychic','bug','rock','ghost','dragon','dark','steel','fairy'
+];
+
+
+// Override Arceus type locally without re-fetching
+function overrideArceusType(panel, type) {
+  var types = [type];
+  var typeColor = TYPE_COLORS[type] || '#555';
+
+  // Update type badges
+  document.getElementById(panel + '-types').innerHTML =
+    '<span class="type-badge" style="background:' + typeColor + '">' + type + '</span>';
+
+  // Recalculate weaknesses for new type
+  var weakMap = calcWeaknesses(types);
+
+  if (panel === 'yours') {
+    yourWeaknesses = {};
+    for (var t in weakMap) { if (weakMap[t] >= 2) yourWeaknesses[t] = weakMap[t]; }
+    renderTypeBreakdown(weakMap, 'yours-weaknesses', 'yours-resistances', 'yours-immunities');
+    checkEnemyWarnings();
+  } else {
+    renderTypeBreakdown(weakMap, 'enemy-weaknesses', 'enemy-resistances', 'enemy-immunities');
+    // Update enemy weakness tracking for party warnings
+    updatePartyWarnings();
+  }
+}
+
+// Arceus pickers are initialized once at startup, not on every select
+function initArceusPicker(selectId, onTypeChange) {
+  var select = document.getElementById(selectId);
+  select.innerHTML = ARCEUS_TYPES.map(function(t) {
+    return '<option value="' + t + '">' + capitalize(t) + '</option>';
+  }).join('');
+  select.addEventListener('change', function() {
+    onTypeChange(select.value);
+  });
+}
+
+function showArceusPicker(pickerId, selectId) {
+  var picker = document.getElementById(pickerId);
+  // Only reset if not already visible (avoid triggering change event loop)
+  if (!picker.classList.contains('visible')) {
+    picker.classList.add('visible');
+    // Use selectedIndex instead of .value to avoid firing change event
+    document.getElementById(selectId).selectedIndex = 0;
+  }
+}
+
+function hideArceusPicker(pickerId) {
+  document.getElementById(pickerId).classList.remove('visible');
+}
+
 // ─── Your Pokemon ─────────────────────────────────────────────────────────────
 async function loadYourPokemon(name) {
+  // Handle Arceus form selection
+  if (name === 'arceus') {
+    showArceusPicker('yours-arceus-picker', 'yours-arceus-type');
+  } else {
+    hideArceusPicker('yours-arceus-picker');
+  }
   const status = document.getElementById('yours-status');
   status.innerHTML = '<span class="loader"></span> Loading...';
 
@@ -1037,6 +1218,12 @@ async function loadYourPokemon(name) {
 let enemyData = null;
 
 async function loadEnemyPokemon(name) {
+  // Handle Arceus form selection
+  if (name === 'arceus') {
+    showArceusPicker('enemy-arceus-picker', 'enemy-arceus-type');
+  } else {
+    hideArceusPicker('enemy-arceus-picker');
+  }
   const status = document.getElementById('enemy-status');
   status.innerHTML = '<span class="loader"></span> Loading...';
   document.getElementById('enemy-moves').innerHTML = '<span style="color:var(--muted);font-size:0.85rem">&#8212;</span>';
@@ -1183,6 +1370,8 @@ function capitalize(s) {
     buildPartySlots();
     setupSearch(document.getElementById('yours-input'), document.getElementById('yours-dropdown'), loadYourPokemon);
     setupSearch(document.getElementById('enemy-input'), document.getElementById('enemy-dropdown'), loadEnemyPokemon);
+    initArceusPicker('yours-arceus-type', function(type) { overrideArceusType('yours', type); });
+    initArceusPicker('enemy-arceus-type', function(type) { overrideArceusType('enemy', type); });
   } catch(e) {
     console.error('Failed to load Pokemon list', e);
   }
